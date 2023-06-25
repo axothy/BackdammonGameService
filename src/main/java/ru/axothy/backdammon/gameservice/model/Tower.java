@@ -17,6 +17,9 @@ public class Tower {
     @Column(name = "IS_MAIN_TOWER", nullable = false)
     private boolean isMainTower;
 
+    @Column(name = "TOWER_NUMBER_ON_BOARD", nullable = false)
+    private int towerNumberOnBoard;
+
     @OneToMany
     private Stack<Chip> chips = new Stack<>();
 

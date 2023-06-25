@@ -16,5 +16,8 @@ public class Chip {
     @Column(name = "CHIP_COLOR")
     private ChipColor color;
 
+    @Column(name = "CHIP_NUMBER_ON_BOARD")
+    private int chipNumberOnBoard;
+
 
 }

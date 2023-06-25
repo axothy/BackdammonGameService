@@ -1,5 +1,6 @@
 package ru.axothy.backdammon.gameservice.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,13 +10,14 @@ import java.util.List;
 
 @Getter @Setter
 @Entity
-public class Game {
+public class Board {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "GAME_ID")
+    @Column(name = "BOARD_ID")
     private int gameId;
 
     @OneToMany
+    @JsonManagedReference
     private List<Tower> towers = new ArrayList<>();
 
 
