@@ -6,9 +6,6 @@ import lombok.Setter;
 
 import javax.persistence.*;
 
-enum Color {
-    BLACK, WHITE
-}
 @Entity
 @Getter @Setter
 public class Player {

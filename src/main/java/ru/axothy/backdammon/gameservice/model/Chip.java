@@ -1,11 +1,11 @@
 package ru.axothy.backdammon.gameservice.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.persistence.*;
 
-enum ChipColor {
-    BLACK , WHITE
-}
-
+@Getter @Setter
 @Entity
 public class Chip {
     @Id
@@ -14,7 +14,7 @@ public class Chip {
     private int chipId;
 
     @Column(name = "CHIP_COLOR")
-    private ChipColor color;
+    private Color color;
 
     @Column(name = "CHIP_NUMBER_ON_BOARD")
     private int chipNumberOnBoard;

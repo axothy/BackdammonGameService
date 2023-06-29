@@ -14,12 +14,10 @@ public class Board {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "BOARD_ID")
-    private int gameId;
+    private int boardId;
 
     @OneToMany
     @JsonManagedReference
     private List<Tower> towers = new ArrayList<>();
-
-
 
 }

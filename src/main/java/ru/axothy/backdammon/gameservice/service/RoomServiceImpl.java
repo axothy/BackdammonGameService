@@ -16,7 +16,6 @@ import java.util.Set;
 public class RoomServiceImpl implements RoomService {
     public static final int MAX_PLAYERS_IN_ROOM = 2;
     public static final int MIN_PLAYERS_IN_ROOM = 1;
-
     public static final int FIRST_PLAYER = 0;
     public static final int SECOND_PLAYER = 1;
 
@@ -108,6 +107,8 @@ public class RoomServiceImpl implements RoomService {
             }
         }
     }
+
+
 
 
 }
