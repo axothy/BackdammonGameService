@@ -4,9 +4,10 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.axothy.backdammon.gameservice.config.KeycloakConfiguration;
+import ru.axothy.backdammon.gameservice.model.Player;
 import ru.axothy.backdammon.gameservice.model.Room;
 import ru.axothy.backdammon.gameservice.service.RoomService;
 
@@ -38,6 +39,22 @@ public class RoomController {
     @GetMapping(value = "/test")
     public String test(Principal principal) {
         return retrieveNickname(principal.getName());
+    }
+
+    @RolesAllowed({"PLAYER", "ADMIN"})
+    @PostMapping(value = "/create_no_password")
+    public ResponseEntity<Room> createNewRoomNoPassword(Principal principal) {
+        Room newRoom = roomService.create(retrieveNickname(principal.getName()));
+
+        return ResponseEntity.ok(newRoom);
+    }
+
+    @RolesAllowed({"PLAYER", "ADMIN"})
+    @PostMapping(value = "/join/{id}")
+    public ResponseEntity<Room> joinRoomNoPassword(@PathVariable("id") Integer id, Principal principal) {
+        Room room = roomService.joinRoom(id, retrieveNickname(principal.getName()));
+
+        return ResponseEntity.ok(room);
     }
 
     private String retrieveNickname(String id) {

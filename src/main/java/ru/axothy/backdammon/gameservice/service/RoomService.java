@@ -10,14 +10,14 @@ public interface RoomService {
     Room getRoomById(int id);
     Page<Room> getRooms(int page, int size);
 
-    void joinRoom(int roomId, Player player);
+    Room joinRoom(int roomId, String nickname);
 
-    void joinRoom(int roomId, int roomPassword, Player player);
+    void joinRoom(int roomId, int roomPassword, String nickname);
 
-    Room create(Player player);
-    Room create(int bet, Player player);
-    Room create(int bet, int roomPassword, Player player);
+    Room create(String nickname);
+    Room create(int bet, String nickname);
+    Room create(int bet, int roomPassword, String nickname);
     void delete(int roomId);
 
-    void makePlayerReady(int roomId, String playerNickname);
+    void makePlayerReady(int roomId, String nickname);
 }
