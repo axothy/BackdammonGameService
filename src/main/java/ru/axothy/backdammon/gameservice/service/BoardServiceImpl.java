@@ -15,8 +15,8 @@ import java.util.Stack;
 @Service
 public class BoardServiceImpl implements BoardService {
     private static final int NUMBER_OF_TOWERS = 24;
-    private static final int INITIAL_TOWER_INDEX_BLACK = 0;
-    private static final int INITIAL_TOWER_INDEX_WHITE = 12;
+    private static final int INITIAL_TOWER_INDEX_BLACK = 12;
+    private static final int INITIAL_TOWER_INDEX_WHITE = 0;
     private static final int NUMBER_OF_CHIPS = 15;
 
     @Autowired
@@ -48,15 +48,15 @@ public class BoardServiceImpl implements BoardService {
         return towers;
     }
 
-    private Stack<Chip> createChips(Color color) {
-        Stack<Chip> chips = new Stack<>();
+    private List<Chip> createChips(Color color) {
+        List<Chip> chips = new ArrayList<>();
 
         for(int i = 0; i < NUMBER_OF_CHIPS; i++) {
             Chip chip = new Chip();
             chip.setColor(color);
             chip.setChipNumberOnBoard(i);
 
-            chips.push(chip);
+            chips.add(chip);
         }
 
         return chips;

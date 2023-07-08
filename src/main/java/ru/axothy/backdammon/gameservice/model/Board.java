@@ -5,12 +5,14 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter @Setter
 @Entity
-public class Board {
+@Table(name = "boards")
+public class Board implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "BOARD_ID")
@@ -19,5 +21,8 @@ public class Board {
     @OneToMany
     @JsonManagedReference
     private List<Tower> towers = new ArrayList<>();
+
+    @OneToOne(mappedBy = "board")
+    private Room room;
 
 }

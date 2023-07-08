@@ -9,5 +9,4 @@ public interface RoomRepository extends CrudRepository<Room, Integer> {
     Page<Room> findAll(Pageable pageable);
     Page<Room> findByIsGameStartedFalse(Pageable pageable);
     Room findById(int id);
-    Room findByName(String name);
 }

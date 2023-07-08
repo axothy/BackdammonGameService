@@ -18,43 +18,39 @@ public class RoomServiceImpl implements RoomService {
     public static final int MIN_PLAYERS_IN_ROOM = 1;
     public static final int FIRST_PLAYER = 0;
     public static final int SECOND_PLAYER = 1;
-
     public static final int NO_BET = 0;
 
     @Autowired
     private RoomRepository roomRepository;
 
     @Override
-    public Room getRoomByName(String name) {
-        return roomRepository.findByName(name);
+    public Room getRoomById(int id) {
+        return roomRepository.findById(id);
     }
 
     @Override
-    public Room create(String roomName, Player player) {
+    public Room create(Player player) {
         Room room = new Room();
-        room.setName(roomName);
         room.setBet(NO_BET);
         room.getPlayers().add(player);
         return roomRepository.save(room);
     }
 
     @Override
-    public Room create(String roomName, int bet, Player player) {
+    public Room create(int bet, Player player) {
         if (player.getBalance() < bet) return null;
 
         Room room = new Room();
-        room.setName(roomName);
         room.setBet(bet);
         room.getPlayers().add(player);
         return roomRepository.save(room);
     }
 
     @Override
-    public Room create(String roomName, int bet, int roomPassword, Player player) {
+    public Room create(int bet, int roomPassword, Player player) {
         if (player.getBalance() < bet) return null;
 
         Room room = new Room();
-        room.setName(roomName);
         room.setBet(bet);
         room.setRoomPassword(roomPassword);
         room.getPlayers().add(player);
@@ -73,8 +69,8 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public void joinRoom(String roomName, Player player) {
-        Room room = getRoomByName(roomName);
+    public void joinRoom(int roomId, Player player) {
+        Room room = getRoomById(roomId);
         if (room.isGameStarted() == false && room.getRoomPassword() == null && player.getBalance() >= room.getBet()
                 && room.getPlayers().size() < MAX_PLAYERS_IN_ROOM) {
             room.getPlayers().add(player);
@@ -82,8 +78,8 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public void joinRoom(String roomName, int roomPassword, Player player) {
-        Room room = getRoomByName(roomName);
+    public void joinRoom(int roomId, int roomPassword, Player player) {
+        Room room = getRoomById(roomId);
         if (room.isGameStarted() == false && player.getBalance() >= room.getBet()
                 && room.getPlayers().size() < MAX_PLAYERS_IN_ROOM && room.getRoomPassword() == roomPassword) {
             room.getPlayers().add(player);
@@ -107,8 +103,5 @@ public class RoomServiceImpl implements RoomService {
             }
         }
     }
-
-
-
 
 }

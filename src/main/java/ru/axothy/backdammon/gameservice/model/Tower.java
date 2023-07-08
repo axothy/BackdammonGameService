@@ -1,14 +1,18 @@
 package ru.axothy.backdammon.gameservice.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.Stack;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter @Setter
 @Entity
-public class Tower {
+@Table(name = "towers")
+public class Tower implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TOWER_ID", nullable = false)
@@ -17,10 +21,11 @@ public class Tower {
     @Column(name = "IS_MAIN_TOWER", nullable = false)
     private boolean isMainTower = false;
 
-    @Column(name = "TOWER_NUMBER_ON_BOARD", nullable = false)
+    @Column(name = "TOWER_NUMBER_ON_BOARD")
     private int towerNumberOnBoard;
 
     @OneToMany
-    private Stack<Chip> chips = new Stack<>();
+    @JsonManagedReference
+    private List<Chip> chips = new ArrayList<>();
 
 }
