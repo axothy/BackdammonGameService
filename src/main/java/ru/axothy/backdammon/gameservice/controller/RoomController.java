@@ -4,10 +4,10 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.axothy.backdammon.gameservice.config.KeycloakConfiguration;
-import ru.axothy.backdammon.gameservice.model.Player;
 import ru.axothy.backdammon.gameservice.model.Room;
 import ru.axothy.backdammon.gameservice.service.RoomService;
 
@@ -42,10 +42,11 @@ public class RoomController {
     }
 
     @RolesAllowed({"PLAYER", "ADMIN"})
-    @PostMapping(value = "/create_no_password")
-    public ResponseEntity<Room> createNewRoomNoPassword(Principal principal) {
-        Room newRoom = roomService.create(retrieveNickname(principal.getName()));
+    @PostMapping(value = "/create_no_password", params = {"bet"})
+    public ResponseEntity<Room> createNewRoomNoPassword(Principal principal, @RequestParam int bet) {
+        Room newRoom = roomService.create(bet, retrieveNickname(principal.getName()));
 
+        if (newRoom == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         return ResponseEntity.ok(newRoom);
     }
 
@@ -53,6 +54,15 @@ public class RoomController {
     @PostMapping(value = "/join/{id}")
     public ResponseEntity<Room> joinRoomNoPassword(@PathVariable("id") Integer id, Principal principal) {
         Room room = roomService.joinRoom(id, retrieveNickname(principal.getName()));
+
+        if (room == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        return ResponseEntity.ok(room);
+    }
+
+    @RolesAllowed({"PLAYER", "ADMIN"})
+    @PostMapping(value = "/ready", params = {"ready"})
+    public ResponseEntity<Room> makePlayerReady(Principal principal, @RequestParam Boolean ready) {
+        Room room = roomService.makePlayerReady(retrieveNickname(principal.getName()), ready);
 
         return ResponseEntity.ok(room);
     }

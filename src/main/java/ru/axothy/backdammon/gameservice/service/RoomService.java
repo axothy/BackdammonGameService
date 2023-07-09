@@ -14,10 +14,9 @@ public interface RoomService {
 
     void joinRoom(int roomId, int roomPassword, String nickname);
 
-    Room create(String nickname);
     Room create(int bet, String nickname);
     Room create(int bet, int roomPassword, String nickname);
     void delete(int roomId);
 
-    void makePlayerReady(int roomId, String nickname);
+    Room makePlayerReady(String nickname, boolean ready);
 }

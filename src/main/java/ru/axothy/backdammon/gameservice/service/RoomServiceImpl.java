@@ -1,17 +1,25 @@
 package ru.axothy.backdammon.gameservice.service;
 
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+import ru.axothy.backdammon.gameservice.config.KeycloakConfiguration;
 import ru.axothy.backdammon.gameservice.model.Color;
+import ru.axothy.backdammon.gameservice.model.ExistingPlayer;
 import ru.axothy.backdammon.gameservice.model.Player;
 import ru.axothy.backdammon.gameservice.model.Room;
 import ru.axothy.backdammon.gameservice.repos.RoomRepository;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class RoomServiceImpl implements RoomService {
@@ -27,13 +35,22 @@ public class RoomServiceImpl implements RoomService {
     @Autowired
     private PlayerService playerService;
 
+    @Autowired
+    private KeycloakConfiguration keycloakConfig;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
     @Override
     public Room getRoomById(int id) {
         return roomRepository.findById(id);
     }
 
     @Override
-    public Room create(String nickname) {
+    public Room create(int bet, String nickname) {
+        if (!(balanceCheck(nickname, bet)))
+            return null;
+
         Player player = playerService.getByNickname(nickname);
 
         if (player == null) {
@@ -43,30 +60,39 @@ public class RoomServiceImpl implements RoomService {
 
         if (player.getRoom() != null) return player.getRoom();
 
-
         player.setReady(false);
         player.setColor(Color.WHITE);
 
         Room room = new Room();
 
-        room.setBet(NO_BET);
+        room.setBet(bet);
+        room.setPasswordEnabled(false);
         room.getPlayers().add(player);
 
         player.setRoom(room);
 
         roomRepository.save(room);
         playerService.save(player);
+
         return room;
     }
 
-    @Override
-    public Room create(int bet, String nickname) {
-        //if (player.getBalance() < bet) return null;
+    private boolean balanceCheck(String nickname, int balance) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(getAdminToken());
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-        Room room = new Room();
-        room.setBet(bet);
-        //room.getPlayers().add(player);
-        return roomRepository.save(room);
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString("http://localhost:8081/players")
+                .queryParam("nickname", nickname);
+        HttpEntity request = new HttpEntity(headers);
+
+
+        ExistingPlayer player = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, request, ExistingPlayer.class).getBody();
+
+        if (player.getBalance() >= balance)
+            return true;
+        else
+            return false;
     }
 
     @Override
@@ -96,6 +122,9 @@ public class RoomServiceImpl implements RoomService {
     public Room joinRoom(int roomId, String nickname) {
         Room room = getRoomById(roomId);
 
+        if (!(balanceCheck(nickname, room.getBet())))
+            return null;
+
         Player player = playerService.getByNickname(nickname);
 
         if (player == null) {
@@ -103,17 +132,19 @@ public class RoomServiceImpl implements RoomService {
             player.setNickname(nickname);
         }
 
+        if (player.getRoom() != null || room.isGameStarted() || room.isPasswordEnabled()
+                || room.getPlayers().size() >= MAX_PLAYERS_IN_ROOM)
+            return null;
+
+
         player.setReady(false);
         player.setColor(Color.BLACK);
         player.setRoom(room);
 
-        if (player.getRoom() == null && room.isGameStarted() == false && room.getRoomPassword() == null /*&& player.getBalance() >= room.getBet()*/
-                && room.getPlayers().size() < MAX_PLAYERS_IN_ROOM) {
-            room.getPlayers().add(player);
-        }
-
-        roomRepository.save(room);
+        room.getPlayers().add(player);
         playerService.save(player);
+        roomRepository.save(room);
+
         return room;
     }
 
@@ -127,21 +158,35 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public void makePlayerReady(int roomId, String nickname) {
-        Room room = roomRepository.findById(roomId);
-        List<Player> playersInRoom = room.getPlayers();
+    public Room makePlayerReady(String nickname, boolean ready) {
+        Player player = playerService.getByNickname(nickname);
 
-        for (Player player : playersInRoom) {
-            if (player.getNickname() == nickname) {
-                player.setReady(true);
-            }
-        }
+        player.setReady(ready);
 
-        if (playersInRoom.size() == MAX_PLAYERS_IN_ROOM) {
-            if (playersInRoom.get(FIRST_PLAYER).isReady() == true && playersInRoom.get(SECOND_PLAYER).isReady() == true) {
+        Room room = player.getRoom();
+        List<Player> players = room.getPlayers();
+
+        if (players.size() == MAX_PLAYERS_IN_ROOM) {
+            if (players.get(FIRST_PLAYER).isReady() == true && players.get(SECOND_PLAYER).isReady() == true) {
+                room.setGameStarted(true);
                 //TODO START GAME
             }
         }
+
+        roomRepository.save(room);
+        return room;
+    }
+
+    private String getAdminToken() {
+        Keycloak keycloak = KeycloakBuilder.builder().serverUrl(keycloakConfig.getAuthServerUrl())
+                .grantType("password")
+                .realm(keycloakConfig.getRealm())
+                .clientId(keycloakConfig.getResource())
+                .clientSecret(keycloakConfig.getClientSecret())
+                .username(keycloakConfig.getUsername())
+                .password(keycloakConfig.getPassword())
+                .build();
+        return keycloak.tokenManager().getAccessTokenString();
     }
 
 }

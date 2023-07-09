@@ -21,9 +21,6 @@ public class Player {
     @Column(name = "IS_READY")
     private boolean isReady = false;
 
-    @Column(name = "BALANCE")
-    private int balance;
-
     @Column(name = "COLOR")
     private Color color;
 

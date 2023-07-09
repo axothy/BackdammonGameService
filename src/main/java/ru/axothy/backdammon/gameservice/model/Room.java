@@ -19,8 +19,11 @@ public class Room implements Serializable {
     @Column(name = "ROOM_ID", nullable = false)
     private int roomId;
 
+    @Column(name = "PASSWORD_ENABLED", nullable = false)
+    private boolean passwordEnabled;
+
     @Column(name = "ROOM_PASSWORD", nullable = true)
-    private Integer roomPassword;
+    private int roomPassword;
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference

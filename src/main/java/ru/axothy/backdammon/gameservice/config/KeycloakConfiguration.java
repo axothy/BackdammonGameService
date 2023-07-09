@@ -1,5 +1,7 @@
 package ru.axothy.backdammon.gameservice.config;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -8,9 +10,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@Getter
+@Setter
 public class KeycloakConfiguration {
     @Value("${keycloak.auth-server-url}")
     private String authServerUrl;
+
+    @Value("${keycloak.resource}")
+    private String resource;
+
+    @Value("${keycloak.credentials.secret}")
+    private String clientSecret;
 
     @Value("${keycloak.realm}")
     private String realm;
