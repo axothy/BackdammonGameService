@@ -21,10 +21,22 @@ public class Player {
     @Column(name = "IS_READY")
     private boolean isReady = false;
 
+    @Column(name = "IS_ROOM_OWNER")
+    private boolean isRoomOwner = false;
+
     @Column(name = "COLOR")
     private Color color;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @Column(name = "START_VALUE_FIRST")
+    private int startValueFirst;
+
+    @Column(name = "START_VALUE_SECOND")
+    private int startValueSecond;
+
+    @Column(name = "MOVES_FIRST")
+    private boolean movesFirst;
+
+    @ManyToOne
     @JoinColumn(name = "ROOM_ID")
     @JsonBackReference
     private Room room;

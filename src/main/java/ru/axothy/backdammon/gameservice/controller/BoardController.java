@@ -5,36 +5,43 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.async.DeferredResult;
 import ru.axothy.backdammon.gameservice.config.KeycloakConfiguration;
-import ru.axothy.backdammon.gameservice.model.Player;
+import ru.axothy.backdammon.gameservice.model.Board;
 import ru.axothy.backdammon.gameservice.model.Room;
-import ru.axothy.backdammon.gameservice.service.PlayerService;
+import ru.axothy.backdammon.gameservice.model.Tower;
+import ru.axothy.backdammon.gameservice.service.BoardService;
 
 import javax.annotation.security.RolesAllowed;
 import java.security.Principal;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RestController
-@RequestMapping(value = "/room")
-public class PlayerController {
-    @Autowired
-    private KeycloakConfiguration keycloakConfiguration;
+@RequestMapping(value = "/board")
+public class BoardController {
+    private ExecutorService executorService = Executors.newFixedThreadPool(5);
 
     @Autowired
     private Keycloak keycloak;
 
     @Autowired
-    private PlayerService playerService;
+    private KeycloakConfiguration keycloakConfiguration;
+
+    @Autowired
+    private BoardService boardService;
 
     @RolesAllowed({"PLAYER", "ADMIN"})
-    @GetMapping(value = "/player")
-    public ResponseEntity<Room> getPlayerRoom(Principal principal) {
-        Player player = playerService.getByNickname(retrieveNickname(principal.getName()));
+    @PostMapping(value = "/startroll")
+    public ResponseEntity<Room> startRoll(Principal principal) {
+        Board board = boardService.startRoll(retrieveNickname(principal.getName()));
 
-        return ResponseEntity.ok(player.getRoom());
+        return ResponseEntity.ok(board.getRoom());
     }
+
+
 
     private String retrieveNickname(String id) {
         UsersResource usersResource = keycloak.realm(keycloakConfiguration.getRealm()).users();

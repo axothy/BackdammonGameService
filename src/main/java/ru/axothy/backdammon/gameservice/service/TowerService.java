@@ -1,9 +1,13 @@
 package ru.axothy.backdammon.gameservice.service;
 
 import ru.axothy.backdammon.gameservice.model.Chip;
+import ru.axothy.backdammon.gameservice.model.Tower;
+
+import java.util.List;
 
 public interface TowerService {
-    void push(int towerId, Chip chip);
-    Chip pop(int towerId);
+    List<Tower> createTowers();
+    Tower push(int towerId, Chip chip);
+    Tower pop(int towerId);
 
 }

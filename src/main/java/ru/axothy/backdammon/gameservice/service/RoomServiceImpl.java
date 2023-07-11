@@ -13,10 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.axothy.backdammon.gameservice.config.KeycloakConfiguration;
-import ru.axothy.backdammon.gameservice.model.Color;
-import ru.axothy.backdammon.gameservice.model.ExistingPlayer;
-import ru.axothy.backdammon.gameservice.model.Player;
-import ru.axothy.backdammon.gameservice.model.Room;
+import ru.axothy.backdammon.gameservice.model.*;
 import ru.axothy.backdammon.gameservice.repos.RoomRepository;
 
 import java.util.List;
@@ -36,6 +33,9 @@ public class RoomServiceImpl implements RoomService {
     private PlayerService playerService;
 
     @Autowired
+    private BoardService boardService;
+
+    @Autowired
     private KeycloakConfiguration keycloakConfig;
 
     @Autowired
@@ -45,6 +45,7 @@ public class RoomServiceImpl implements RoomService {
     public Room getRoomById(int id) {
         return roomRepository.findById(id);
     }
+
 
     @Override
     public Room create(int bet, String nickname) {
@@ -62,6 +63,7 @@ public class RoomServiceImpl implements RoomService {
 
         player.setReady(false);
         player.setColor(Color.WHITE);
+        player.setRoomOwner(true);
 
         Room room = new Room();
 
@@ -107,9 +109,22 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public void delete(int roomId) {
-        Room room = roomRepository.findById(roomId);
+    public void delete(Room room) {
         roomRepository.delete(room);
+    }
+
+    @Override
+    public void leaveRoom(String nickname) {
+        Player player = playerService.getByNickname(nickname);
+        Room room = player.getRoom();
+
+        if (player.isRoomOwner())
+            delete(room);
+        else {
+            room.getPlayers().remove(player);
+            playerService.delete(player);
+            roomRepository.save(room);
+        }
     }
 
     @Override
@@ -117,7 +132,6 @@ public class RoomServiceImpl implements RoomService {
         return roomRepository.findByIsGameStartedFalse(PageRequest.of(page, size));
     }
 
-    //NEEDED CHECK PLAYER BALANCE
     @Override
     public Room joinRoom(int roomId, String nickname) {
         Room room = getRoomById(roomId);
@@ -139,22 +153,17 @@ public class RoomServiceImpl implements RoomService {
 
         player.setReady(false);
         player.setColor(Color.BLACK);
+        player.setRoomOwner(false);
         player.setRoom(room);
 
         room.getPlayers().add(player);
         playerService.save(player);
-        roomRepository.save(room);
-
-        return room;
+        return roomRepository.save(room);
     }
 
     @Override
     public void joinRoom(int roomId, int roomPassword, String nickname) {
-        Room room = getRoomById(roomId);
-        //if (room.isGameStarted() == false && player.getBalance() >= room.getBet()
-        //        && room.getPlayers().size() < MAX_PLAYERS_IN_ROOM && room.getRoomPassword() == roomPassword) {
-        //room.getPlayers().add(player);
-        //}
+
     }
 
     @Override
@@ -164,17 +173,34 @@ public class RoomServiceImpl implements RoomService {
         player.setReady(ready);
 
         Room room = player.getRoom();
+
+        if (room.isGameStarted()) return null;
+
         List<Player> players = room.getPlayers();
 
         if (players.size() == MAX_PLAYERS_IN_ROOM) {
             if (players.get(FIRST_PLAYER).isReady() == true && players.get(SECOND_PLAYER).isReady() == true) {
                 room.setGameStarted(true);
-                //TODO START GAME
+                Board board = boardService.createBoard(room);
+                room.setBoard(board);
             }
         }
 
         roomRepository.save(room);
         return room;
+    }
+
+    @Override
+    public boolean bothPlayersAreReady(int roomId) {
+        List<Player> players = getRoomById(roomId).getPlayers();
+
+        if (players.size() < MAX_PLAYERS_IN_ROOM) return false;
+        else {
+            if (players.get(FIRST_PLAYER).isReady() == true && players.get(SECOND_PLAYER).isReady() == true)
+                return true;
+        }
+
+        return false;
     }
 
     private String getAdminToken() {

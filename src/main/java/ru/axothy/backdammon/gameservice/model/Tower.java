@@ -3,14 +3,18 @@ package ru.axothy.backdammon.gameservice.model;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-@Getter @Setter
 @Entity
+@Getter @Setter
 @Table(name = "towers")
 public class Tower implements Serializable {
     @Id
@@ -25,6 +29,7 @@ public class Tower implements Serializable {
     private int towerNumberOnBoard;
 
     @OneToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
     @JsonManagedReference
     private List<Chip> chips = new ArrayList<>();
 

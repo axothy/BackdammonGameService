@@ -1,8 +1,11 @@
 package ru.axothy.backdammon.gameservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -22,10 +25,12 @@ public class Room implements Serializable {
     @Column(name = "PASSWORD_ENABLED", nullable = false)
     private boolean passwordEnabled;
 
+    @JsonIgnore
     @Column(name = "ROOM_PASSWORD", nullable = true)
     private int roomPassword;
 
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    @LazyCollection(LazyCollectionOption.FALSE)
     @JsonManagedReference
     private List<Player> players = new ArrayList<>();
 
@@ -37,6 +42,7 @@ public class Room implements Serializable {
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "BOARD_ID", referencedColumnName = "BOARD_ID")
+    @JsonManagedReference
     private Board board;
 
 }

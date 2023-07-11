@@ -18,4 +18,17 @@ public class PlayerServiceImpl implements PlayerService {
     public Player save(Player player) {
         return playerRepository.save(player);
     }
+
+    @Override
+    public Player setStartValue(Player player, int value1, int value2) {
+        player.setStartValueFirst(value1);
+        player.setStartValueSecond(value1);
+
+        return playerRepository.save(player);
+    }
+
+    @Override
+    public void delete(Player player) {
+        playerRepository.delete(player);
+    }
 }
