@@ -40,9 +40,12 @@ public class Room implements Serializable {
     @Column(name = "IS_GAME_STARTED")
     private boolean isGameStarted = false;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "BOARD_ID", referencedColumnName = "BOARD_ID")
+    @Column(name = "WHO_MOVES")
+    private Color whoMoves;
+
+    @OneToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
     @JsonManagedReference
-    private Board board;
+    private List<Tower> towers = new ArrayList<>();
 
 }

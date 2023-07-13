@@ -88,7 +88,7 @@ public class RoomController {
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
         executor.scheduleAtFixedRate(() -> {
-            if (roomService.bothPlayersAreReady(player.getRoom().getRoomId())) {
+            if (roomService.bothPlayersAreReady(player.getRoom())) {
                 Room room = roomService.getRoomById(player.getRoom().getRoomId());
                 output.setResult(ResponseEntity.ok(room));
 
@@ -115,6 +115,14 @@ public class RoomController {
     public void leaveRoom(Principal principal) {
         roomService.leaveRoom(retrieveNickname(principal.getName()));
 
+    }
+
+    @RolesAllowed({"PLAYER", "ADMIN"})
+    @PostMapping(value = "/startroll")
+    public ResponseEntity<Room> startRoll(Principal principal) {
+        Room room = roomService.startRoll(retrieveNickname(principal.getName()));
+
+        return ResponseEntity.ok(room);
     }
 
 }

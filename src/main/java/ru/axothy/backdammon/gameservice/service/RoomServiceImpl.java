@@ -20,6 +20,10 @@ import java.util.List;
 
 @Service
 public class RoomServiceImpl implements RoomService {
+    private static final int NUMBER_OF_TOWERS = 24;
+    private static final int INITIAL_TOWER_INDEX_BLACK = 23;
+    private static final int INITIAL_TOWER_INDEX_WHITE = 11;
+    private static final int NUMBER_OF_CHIPS = 15;
     public static final int MAX_PLAYERS_IN_ROOM = 2;
     public static final int MIN_PLAYERS_IN_ROOM = 1;
     public static final int FIRST_PLAYER = 0;
@@ -33,7 +37,7 @@ public class RoomServiceImpl implements RoomService {
     private PlayerService playerService;
 
     @Autowired
-    private BoardService boardService;
+    private TowerService towerService;
 
     @Autowired
     private KeycloakConfiguration keycloakConfig;
@@ -133,6 +137,13 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    public Room getRoomByPlayer(String nickname) {
+        Player player = playerService.getByNickname(nickname);
+
+        return player.getRoom();
+    }
+
+    @Override
     public Room joinRoom(int roomId, String nickname) {
         Room room = getRoomById(roomId);
 
@@ -179,10 +190,10 @@ public class RoomServiceImpl implements RoomService {
         List<Player> players = room.getPlayers();
 
         if (players.size() == MAX_PLAYERS_IN_ROOM) {
-            if (players.get(FIRST_PLAYER).isReady() == true && players.get(SECOND_PLAYER).isReady() == true) {
+            if (bothPlayersAreReady(room)) {
                 room.setGameStarted(true);
-                Board board = boardService.createBoard(room);
-                room.setBoard(board);
+                createBoard(room);
+                room.setWhoMoves(Color.WHITE);
             }
         }
 
@@ -191,8 +202,8 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public boolean bothPlayersAreReady(int roomId) {
-        List<Player> players = getRoomById(roomId).getPlayers();
+    public boolean bothPlayersAreReady(Room room) {
+        List<Player> players = room.getPlayers();
 
         if (players.size() < MAX_PLAYERS_IN_ROOM) return false;
         else {
@@ -201,6 +212,57 @@ public class RoomServiceImpl implements RoomService {
         }
 
         return false;
+    }
+
+    @Override
+    public Room createBoard(Room room) {
+        room.setTowers(towerService.createTowers());
+
+        return roomRepository.save(room);
+    }
+
+    @Override
+    public Room startRoll(String nickname) {
+        int valueFirst = Dice.roll();
+        int valueSecond = Dice.roll();
+
+        Player player = playerService.getByNickname(nickname);
+        Room room = player.getRoom();
+
+        if (room.getWhoMoves() != null) return room;
+
+        playerService.setStartValue(player, valueFirst, valueSecond);
+
+        if (bothPlayersHasStartValue(room)) {
+            Player first = room.getPlayers().get(0);
+            Player second = room.getPlayers().get(1);
+
+            checkWhoMovesFirst(first, second, room);
+        }
+
+        return room;
+    }
+
+    private boolean bothPlayersHasStartValue(Room room) {
+        List<Player> players = room.getPlayers();
+
+        if (players.get(0).getStartValueFirst() != 0 && players.get(1).getStartValueFirst() != 0)
+            return true;
+        else
+            return false;
+    }
+
+    private void checkWhoMovesFirst(Player first, Player second, Room room) {
+
+        if ((first.getStartValueFirst() + first.getStartValueSecond()) <
+                (second.getStartValueFirst() + second.getStartValueSecond())) {
+            second.setMovesFirst(true);
+            room.setWhoMoves(second.getColor());
+        }
+        else {
+            first.setMovesFirst(true);
+            room.setWhoMoves(first.getColor());
+        }
     }
 
     private String getAdminToken() {
