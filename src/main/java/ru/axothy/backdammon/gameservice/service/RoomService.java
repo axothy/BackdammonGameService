@@ -1,7 +1,10 @@
 package ru.axothy.backdammon.gameservice.service;
 
 import org.springframework.data.domain.Page;
+import ru.axothy.backdammon.gameservice.model.Move;
 import ru.axothy.backdammon.gameservice.model.Room;
+
+import java.util.List;
 
 
 public interface RoomService {
@@ -25,7 +28,13 @@ public interface RoomService {
 
     void leaveRoom(String nickname);
 
+    Room move(String nickname, Move move);
+
     Room makePlayerReady(String nickname, boolean ready);
 
     Room startRoll(String nickname);
+
+    Room roll(String nickname);
+
+    List<Integer> getPossibleMoves(String nickname, int towerFromIndex);
 }

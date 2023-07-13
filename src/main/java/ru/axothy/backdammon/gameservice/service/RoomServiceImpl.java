@@ -16,6 +16,8 @@ import ru.axothy.backdammon.gameservice.config.KeycloakConfiguration;
 import ru.axothy.backdammon.gameservice.model.*;
 import ru.axothy.backdammon.gameservice.repos.RoomRepository;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -38,6 +40,9 @@ public class RoomServiceImpl implements RoomService {
 
     @Autowired
     private TowerService towerService;
+
+    @Autowired
+    private Dice dice;
 
     @Autowired
     private KeycloakConfiguration keycloakConfig;
@@ -223,46 +228,177 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public Room startRoll(String nickname) {
-        int valueFirst = Dice.roll();
-        int valueSecond = Dice.roll();
-
         Player player = playerService.getByNickname(nickname);
         Room room = player.getRoom();
 
-        if (room.getWhoMoves() != null) return room;
+        if (room.getWhoMoves() != player.getColor() || isSomeoneMovesFirst(room)) return room;
 
-        playerService.setStartValue(player, valueFirst, valueSecond);
+        int valueFirst = dice.roll();
+        int valueSecond = dice.roll();
 
-        if (bothPlayersHasStartValue(room)) {
-            Player first = room.getPlayers().get(0);
-            Player second = room.getPlayers().get(1);
+        playerService.setDiceValues(player, valueFirst, valueSecond);
+        changeSides(room);
 
-            checkWhoMovesFirst(first, second, room);
-        }
+        if (bothPlayersHasStartValue(room))
+            checkWhoMovesFirst(room);
 
-        return room;
+
+        return roomRepository.save(room);
+    }
+
+    @Override
+    public Room roll(String nickname) {
+        Player player = playerService.getByNickname(nickname);
+        Room room = player.getRoom();
+
+        if (room.getWhoMoves() != player.getColor()) return room;
+
+        int valueFirst = dice.roll();
+        int valueSecond = dice.roll();
+
+        if (valueFirst == valueSecond)
+            player.setMovesLeft(4);
+        else
+            player.setMovesLeft(2);
+
+        playerService.setDiceValues(player, valueFirst, valueSecond);
+
+        return roomRepository.save(room);
+    }
+
+    private void changeSides(Room room) {
+        Color color = room.getWhoMoves();
+
+        room.setWhoMoves(Color.opposite(color));
+    }
+
+    private boolean isSomeoneMovesFirst(Room room) {
+        List<Player> players = room.getPlayers();
+
+        for (Player player : players)
+            if (player.isMovesFirst()) return true;
+
+        return false;
     }
 
     private boolean bothPlayersHasStartValue(Room room) {
         List<Player> players = room.getPlayers();
 
-        if (players.get(0).getStartValueFirst() != 0 && players.get(1).getStartValueFirst() != 0)
+        if (players.get(FIRST_PLAYER).getDiceValueFirst() != 0 && players.get(SECOND_PLAYER).getDiceValueSecond() != 0)
             return true;
         else
             return false;
     }
 
-    private void checkWhoMovesFirst(Player first, Player second, Room room) {
+    private void checkWhoMovesFirst(Room room) {
+        Player first = room.getPlayers().get(FIRST_PLAYER);
+        Player second = room.getPlayers().get(SECOND_PLAYER);
 
-        if ((first.getStartValueFirst() + first.getStartValueSecond()) <
-                (second.getStartValueFirst() + second.getStartValueSecond())) {
+        if ((first.getDiceValueFirst() + first.getDiceValueSecond()) <
+                (second.getDiceValueFirst() + second.getDiceValueSecond())) {
             second.setMovesFirst(true);
             room.setWhoMoves(second.getColor());
-        }
-        else {
+        } else {
             first.setMovesFirst(true);
             room.setWhoMoves(first.getColor());
         }
+    }
+
+    @Override
+    public Room move(String nickname, Move move) {
+        Player player = playerService.getByNickname(nickname);
+        Room room = player.getRoom();
+
+        if (room.getWhoMoves() != player.getColor())
+            return room;
+
+        List<Integer> possibleMoves = getPossibleMoves(nickname, move.getIndexTowerFrom());
+        if (!possibleMoves.contains(move.getIndexTowerTo())) return room;
+
+        Tower towerFrom = room.getTowers().get(move.getIndexTowerFrom());
+        Tower towerTo = room.getTowers().get(move.getIndexTowerTo());
+
+        towerService.moveChip(towerFrom, towerTo);
+
+        player.setMovesLeft(player.getMovesLeft() - 1);
+
+        if (player.getMovesLeft() <= 0)
+            changeSides(room);
+        else
+            playerService.changeDiceValue(player, move.getDiceValue());
+
+        return roomRepository.save(room);
+    }
+
+
+    @Override
+    public List<Integer> getPossibleMoves(String nickname, int towerFromIndex) {
+        List<Integer> possibleMoves = new ArrayList<>();
+
+        Player player = playerService.getByNickname(nickname);
+        Room room = player.getRoom();
+        Tower towerFrom = room.getTowers().get(towerFromIndex);
+
+        if (towerFrom.getChips().isEmpty()) return Collections.emptyList();
+
+        Chip chip = towerService.pop(towerFrom).get();
+
+        if (player.getColor() != chip.getColor()) return Collections.emptyList();
+
+        int towerToIndexFirst = -1, towerToIndexSecond = -1;
+
+        if (chip.getColor() == Color.WHITE) {
+            towerToIndexFirst = getIndexForDiceValueForWhites(player.getDiceValueFirst(), towerFromIndex);
+            towerToIndexSecond = getIndexForDiceValueForWhites(player.getDiceValueSecond(), towerFromIndex);
+
+        } else {
+            towerToIndexFirst = getIndexForDiceValueForBlacks(player.getDiceValueFirst(), towerFromIndex);
+            towerToIndexSecond = getIndexForDiceValueForBlacks(player.getDiceValueSecond(), towerFromIndex);
+        }
+
+        if (!isObstacleOnTower(room, towerToIndexFirst, player.getColor()))
+                possibleMoves.add(towerToIndexFirst);
+        if (!isObstacleOnTower(room, towerToIndexSecond, player.getColor()))
+            possibleMoves.add(towerToIndexSecond);
+
+        return possibleMoves;
+    }
+
+    private boolean booleanIsDouple(Player player) {
+        if (player.getDiceValueFirst() == player.getDiceValueSecond())
+            return true;
+        else
+            return false;
+    }
+
+    private boolean isObstacleOnTower(Room room, int towerToIndex, Color color) {
+        if (towerService.pop(room.getTowers().get(towerToIndex)).isEmpty()) return false;
+
+        if (towerService.pop(room.getTowers().get(towerToIndex)).get().getColor() == Color.opposite(color))
+            return true;
+        else
+            return false;
+    }
+
+    private int getIndexForDiceValueForWhites(int diceValue, int towerFromIndex) {
+        int towerToIndex;
+
+        if (diceValue > 0) {
+            if (towerFromIndex < diceValue)
+                towerToIndex = INITIAL_TOWER_INDEX_BLACK - Math.abs(diceValue - towerFromIndex) + 1;
+            else
+                towerToIndex = towerFromIndex - diceValue;
+        } else
+            return -1;
+
+        return towerToIndex;
+    }
+
+    private int getIndexForDiceValueForBlacks(int diceValue, int towerFromIndex) {
+        if (diceValue > 0)
+            return towerFromIndex - diceValue;
+        else
+            return -1;
     }
 
     private String getAdminToken() {

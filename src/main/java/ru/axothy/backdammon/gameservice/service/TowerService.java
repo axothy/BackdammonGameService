@@ -4,10 +4,15 @@ import ru.axothy.backdammon.gameservice.model.Chip;
 import ru.axothy.backdammon.gameservice.model.Tower;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TowerService {
     List<Tower> createTowers();
-    Tower push(int towerId, Chip chip);
-    Tower pop(int towerId);
+    Tower push(Tower tower, Chip chip);
+    Optional<Chip> pop(Tower tower);
+    Chip removeChip(Tower tower);
+
+    void moveChip(Tower towerFrom, Tower towerTo);
+
 
 }

@@ -7,8 +7,10 @@ import ru.axothy.backdammon.gameservice.model.Color;
 import ru.axothy.backdammon.gameservice.model.Tower;
 import ru.axothy.backdammon.gameservice.repos.TowerRepository;
 
+import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TowerServiceImpl implements TowerService {
@@ -42,18 +44,35 @@ public class TowerServiceImpl implements TowerService {
     }
 
     @Override
-    public Tower push(int towerId, Chip chip) {
-        Tower tower = towerRepository.findById(towerId).get();
+    public Tower push(Tower tower, Chip chip) {
         tower.getChips().add(chip);
 
         return towerRepository.save(tower);
     }
 
     @Override
-    public Tower pop(int towerId) {
-        Tower tower = towerRepository.findById(towerId).get();
-        tower.getChips().remove(tower.getChips().size() - 1);
+    public Optional<Chip> pop(Tower tower) {
+        return tower.getChips().isEmpty() ? Optional.empty() : Optional.of(tower.getChips().get(tower.getChips().size() - 1));
+    }
 
-        return towerRepository.save(tower);
+    @Override
+    public Chip removeChip(Tower tower) {
+        Chip chip = pop(tower).get();
+
+        tower.getChips().remove(chip);
+        towerRepository.save(tower);
+
+        return chip;
+    }
+
+    @Override
+    public void moveChip(Tower towerFrom, Tower towerTo) {
+        Chip chip = pop(towerFrom).get();
+
+        towerFrom.getChips().remove(chip);
+        towerTo.getChips().add(chip);
+
+        towerRepository.save(towerFrom);
+        towerRepository.save(towerTo);
     }
 }

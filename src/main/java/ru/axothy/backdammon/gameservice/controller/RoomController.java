@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 import ru.axothy.backdammon.gameservice.config.KeycloakConfiguration;
+import ru.axothy.backdammon.gameservice.model.Dice;
+import ru.axothy.backdammon.gameservice.model.Move;
 import ru.axothy.backdammon.gameservice.model.Player;
 import ru.axothy.backdammon.gameservice.model.Room;
 import ru.axothy.backdammon.gameservice.service.PlayerService;
@@ -122,6 +124,33 @@ public class RoomController {
     public ResponseEntity<Room> startRoll(Principal principal) {
         Room room = roomService.startRoll(retrieveNickname(principal.getName()));
 
+        return ResponseEntity.ok(room);
+    }
+
+    @RolesAllowed({"PLAYER", "ADMIN"})
+    @PostMapping(value = "/roll")
+    public ResponseEntity<Room> roll(Principal principal) {
+        Room room = roomService.roll(retrieveNickname(principal.getName()));
+
+        return ResponseEntity.ok(room);
+    }
+
+    @RolesAllowed({"PLAYER", "ADMIN"})
+    @GetMapping(value = "/possibleMoves")
+    public ResponseEntity<List<Integer>> getPossibleMoves(Principal principal, @RequestParam int towerFromIndex) {
+        List<Integer> possibleMoves = roomService.getPossibleMoves(retrieveNickname(principal.getName()), towerFromIndex);
+
+        return ResponseEntity.ok(possibleMoves);
+    }
+
+    @RolesAllowed({"PLAYER", "ADMIN"})
+    @PostMapping(value = "/move")
+    public ResponseEntity<Room> move(Principal principal, @RequestParam int indexFrom, @RequestParam int indexTo) {
+        Move move = new Move();
+        move.setIndexTowerTo(indexTo);
+        move.setIndexTowerFrom(indexFrom);
+
+        Room room = roomService.move(retrieveNickname(principal.getName()), move);
         return ResponseEntity.ok(room);
     }
 

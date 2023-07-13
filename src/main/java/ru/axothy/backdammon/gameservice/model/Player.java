@@ -28,10 +28,13 @@ public class Player {
     private Color color;
 
     @Column(name = "START_VALUE_FIRST")
-    private int startValueFirst;
+    private int diceValueFirst;
 
     @Column(name = "START_VALUE_SECOND")
-    private int startValueSecond;
+    private int diceValueSecond;
+
+    @Column(name = "MOVES_LEFT")
+    private int movesLeft;
 
     @Column(name = "MOVES_FIRST")
     private boolean movesFirst;

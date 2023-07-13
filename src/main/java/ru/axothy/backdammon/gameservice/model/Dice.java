@@ -1,12 +1,19 @@
 package ru.axothy.backdammon.gameservice.model;
 
-import java.util.Random;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+@Service
 public class Dice {
-    public static int roll() {
-        Random rand = new Random();
-        int value = rand.nextInt(6) + 1;
+    @Autowired
+    private RestTemplate restTemplate;
 
-        return value;
+    public static final String RANDOM_NUMBER_URL = "https://www.random.org/integers/?num=1&min=1&max=6&col=1&base=10&format=plain&rnd=new";
+    public int roll() {
+        String response = restTemplate.getForObject(RANDOM_NUMBER_URL, String.class);
+
+        return Integer.parseInt(response.replaceAll("\\s", ""));
     }
+
 }
